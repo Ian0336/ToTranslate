@@ -1,16 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from '@tauri-apps/api/event';
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [detectMsg, setDetectMsg] = useState("");
 
-  async function greet() {
+  async function detect(prompt: string) {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+    invoke("detect", { prompt })
   }
+
+  useEffect(() => {
+    // 1. set listener
+    // when Rust emits "ai-token" event, here we receive it
+    const unlistenPromise = listen<string>('ai-token', (event: any) => {
+      // event.payload is the token sent from Rust
+      setDetectMsg(event.payload);
+    });
+
+    return () => {
+      unlistenPromise.then((unlisten: any) => unlisten());
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    detect(e.target.value);
+  };
+  
 
   return (
     <main className="container">
@@ -29,21 +47,13 @@ function App() {
       </div>
       <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      
+      <input
+        id="greet-input"
+        onChange={handleChange}
+        placeholder="Enter a name..."
+      />
+      <p>{detectMsg}</p>
     </main>
   );
 }
