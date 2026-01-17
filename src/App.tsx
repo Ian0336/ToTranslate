@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import "./App.css";
 
 function App() {
+  const [inputValue, setInputValue] = useState("");
   const [detectMsg, setDetectMsg] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function detect(prompt: string) {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -26,7 +28,34 @@ function App() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    detect(e.target.value);
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    // Set new timer - call detect after 500ms of no typing
+    debounceTimer.current = setTimeout(() => {
+      detect(value);
+    }, 500);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' && detectMsg) {
+      e.preventDefault();
+      
+      // Get first word/token from detectMsg
+      const firstToken = detectMsg.split(/\s+/)[0];
+      
+      if (firstToken) {
+        // Append first token to input
+        setInputValue(prev => prev + firstToken);
+        // Clear detectMsg
+        setDetectMsg("");
+      }
+    }
   };
   
 
@@ -50,7 +79,9 @@ function App() {
       
       <input
         id="greet-input"
+        value={inputValue}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         placeholder="Enter a name..."
       />
       <p>{detectMsg}</p>
