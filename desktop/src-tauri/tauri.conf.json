@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "alltocomplete",
+  "productName": "ToTranslate",
   "version": "0.1.0",
-  "identifier": "com.yuyi.alltocomplete",
+  "identifier": "com.yuyi.ToTranslate",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "alltocomplete",
+        "title": "ToTranslate",
         "width": 800,
         "height": 600
       }

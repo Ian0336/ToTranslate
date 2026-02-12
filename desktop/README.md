@@ -1,4 +1,4 @@
-# AlltoComplete
+# ToTranslate
 
 A Tauri desktop application that provides intelligent text completion using local LLM (Ollama).
 
@@ -61,7 +61,7 @@ npm run tauri build
 ## 📁 Project Structure
 
 ```
-alltoComplete/
+ToTranslate/
 ├── src/                  # React frontend
 │   └── App.tsx          # Main application logic
 ├── src-tauri/           # Rust backend

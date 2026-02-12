@@ -1,0 +1,1 @@
+detect 只做最新的 prompt
