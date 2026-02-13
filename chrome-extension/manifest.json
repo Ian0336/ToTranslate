@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "ToTranslate",
+  "version": "1.0.0",
+  "description": "Translate any web page using a local Ollama model. One click to translate all visible text in place.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "http://localhost:11434/*",
+    "http://127.0.0.1:11434/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "ToTranslate Settings"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  }
+}

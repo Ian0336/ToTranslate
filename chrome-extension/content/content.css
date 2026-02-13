@@ -1,0 +1,121 @@
+/* =========================================================================
+   ToTranslate — Content Script Styles
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Floating action button (right edge)
+   --------------------------------------------------------------------------- */
+
+#totranslate-fab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2147483647; /* maximum z-index */
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 10px 12px;
+
+  background: #1a1a2e;
+  color: #ffffff;
+  border-radius: 24px 0 0 24px;
+  box-shadow: -2px 2px 12px rgba(0, 0, 0, 0.25);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s, padding-right 0.2s, box-shadow 0.2s;
+}
+
+#totranslate-fab:hover {
+  background: #16213e;
+  padding-right: 18px;
+  box-shadow: -4px 2px 18px rgba(0, 0, 0, 0.35);
+}
+
+#totranslate-fab svg {
+  flex-shrink: 0;
+}
+
+/* --- Translating state --- */
+
+#totranslate-fab.tt-translating {
+  background: #0f3460;
+}
+
+#totranslate-fab.tt-translating svg {
+  animation: tt-spin 1.2s linear infinite;
+}
+
+@keyframes tt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Done state --- */
+
+#totranslate-fab.tt-done {
+  background: #1a7a4c;
+}
+
+/* ---------------------------------------------------------------------------
+   Translation result block
+   --------------------------------------------------------------------------- */
+
+.totranslate-result {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding: 6px 10px;
+  border-left: 3px solid #4a90d9;
+  background: #f0f4fa;
+  color: #1a1a2e;
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.92em;
+  line-height: 1.55;
+  border-radius: 0 6px 6px 0;
+
+  animation: tt-fadein 0.25s ease;
+}
+
+@keyframes tt-fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------------------------------------------------------------------
+   Toast notification
+   --------------------------------------------------------------------------- */
+
+.totranslate-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+
+  padding: 10px 18px;
+  background: #1a1a2e;
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.totranslate-toast.tt-show {
+  opacity: 1;
+  transform: translateY(0);
+}
