@@ -11,7 +11,7 @@
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2147483647; /* maximum z-index */
+  z-index: 2147483647;
 
   display: flex;
   align-items: center;
@@ -44,28 +44,74 @@
   flex-shrink: 0;
 }
 
-/* --- Translating state --- */
+/* --- Picking state (user is selecting a block) --- */
 
-#totranslate-fab.tt-translating {
-  background: #0f3460;
+#totranslate-fab.tt-picking {
+  background: #c0392b;
 }
 
-#totranslate-fab.tt-translating svg {
-  animation: tt-spin 1.2s linear infinite;
-}
-
-@keyframes tt-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* --- Done state --- */
-
-#totranslate-fab.tt-done {
-  background: #1a7a4c;
+#totranslate-fab.tt-picking:hover {
+  background: #a83224;
 }
 
 /* ---------------------------------------------------------------------------
-   Translation result block
+   Clear pill (appears when translations exist)
+   --------------------------------------------------------------------------- */
+
+#totranslate-clear {
+  position: fixed;
+  right: 0;
+  top: calc(50% + 34px);
+  transform: translateY(8px);
+  z-index: 2147483647;
+
+  padding: 6px 12px;
+  background: #4a4a5e;
+  color: #ffffff;
+  border-radius: 16px 0 0 16px;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.2);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+
+  cursor: pointer;
+  user-select: none;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+}
+
+#totranslate-clear.tt-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+#totranslate-clear:hover {
+  background: #5a5a70;
+}
+
+/* ---------------------------------------------------------------------------
+   Hover highlight (while picking)
+   --------------------------------------------------------------------------- */
+
+body.totranslate-picking,
+body.totranslate-picking * {
+  cursor: crosshair !important;
+}
+
+.totranslate-hover {
+  outline: 2px solid #4a90d9 !important;
+  outline-offset: 2px;
+  background-color: rgba(74, 144, 217, 0.08) !important;
+  transition: background-color 0.15s, outline-color 0.15s;
+}
+
+/* ---------------------------------------------------------------------------
+   Translation result block (inserted below original)
    --------------------------------------------------------------------------- */
 
 .totranslate-result {
@@ -84,9 +130,107 @@
   animation: tt-fadein 0.25s ease;
 }
 
+.totranslate-result.tt-pending {
+  color: #7a7a8e;
+  font-style: italic;
+  border-left-color: #aaa;
+}
+
+.totranslate-result.tt-error {
+  border-left-color: #c0392b;
+  background: #fdecea;
+  color: #7a1f14;
+}
+
 @keyframes tt-fadein {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------------------------------------------------------------------
+   Text-selection popup ("Translate" mini button near selection)
+   --------------------------------------------------------------------------- */
+
+.totranslate-sel-popup {
+  position: absolute;
+  z-index: 2147483647;
+
+  padding: 6px 12px;
+  background: #1a1a2e;
+  color: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+  user-select: none;
+
+  animation: tt-fadein 0.15s ease;
+}
+
+.totranslate-sel-popup:hover {
+  background: #16213e;
+}
+
+/* ---------------------------------------------------------------------------
+   Floating result card (for translated text selection)
+   --------------------------------------------------------------------------- */
+
+.totranslate-float-card {
+  position: absolute;
+  z-index: 2147483647;
+  max-width: 320px;
+  min-width: 140px;
+
+  padding: 10px 30px 10px 12px;
+  background: #ffffff;
+  color: #1a1a2e;
+  border: 1px solid #d3dae6;
+  border-left: 3px solid #4a90d9;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+
+  animation: tt-fadein 0.2s ease;
+}
+
+.totranslate-float-card.tt-error {
+  border-left-color: #c0392b;
+  background: #fdecea;
+  color: #7a1f14;
+}
+
+.totranslate-float-body {
+  word-wrap: break-word;
+}
+
+.totranslate-float-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+
+  color: #7a7a8e;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.totranslate-float-close:hover {
+  background: #eceff5;
+  color: #1a1a2e;
 }
 
 /* ---------------------------------------------------------------------------
