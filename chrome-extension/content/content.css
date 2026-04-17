@@ -111,39 +111,41 @@ body.totranslate-picking * {
 }
 
 /* ---------------------------------------------------------------------------
-   Translation result block (inserted below original)
+   Per-sentence inline translation (inserted right after each sentence)
    --------------------------------------------------------------------------- */
 
-.totranslate-result {
-  margin-top: 4px;
-  margin-bottom: 4px;
-  padding: 6px 10px;
-  border-left: 3px solid #4a90d9;
-  background: #f0f4fa;
-  color: #1a1a2e;
+.totranslate-inline-result {
+  display: block;
+  margin: 2px 0 6px 0;
+  padding: 2px 8px;
 
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: inherit;
+  background: rgba(74, 144, 217, 0.08);
+  border-left: 2px solid #4a90d9;
+  border-radius: 0 4px 4px 0;
+
   font-size: 0.92em;
-  line-height: 1.55;
-  border-radius: 0 6px 6px 0;
+  line-height: 1.5;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
 
-  animation: tt-fadein 0.25s ease;
+  animation: tt-fadein 0.2s ease;
 }
 
-.totranslate-result.tt-pending {
-  color: #7a7a8e;
-  font-style: italic;
-  border-left-color: #aaa;
+.totranslate-inline-result.tt-pending {
+  opacity: 0.6;
+  border-left-color: #bbb;
 }
 
-.totranslate-result.tt-error {
-  border-left-color: #c0392b;
-  background: #fdecea;
+.totranslate-inline-result.tt-error {
   color: #7a1f14;
+  background: rgba(192, 57, 43, 0.08);
+  border-left-color: #c0392b;
 }
 
 @keyframes tt-fadein {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; transform: translateY(-2px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 

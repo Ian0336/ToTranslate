@@ -4,9 +4,9 @@
  * Two ways to trigger a translation:
  *
  *   A. Block picking — click the floating button to enter picking mode.
- *      Hover over any block to highlight it, click to translate just that
- *      block. The translation is inserted below the original. Click the
- *      button again (or press Escape) to leave picking mode.
+ *      Hover over any block to highlight it, click to translate it.
+ *      The block's text is split into sentences and each translation
+ *      is inserted right after its source sentence.
  *
  *   B. Text selection — highlight any text on the page. A small "Translate"
  *      popup appears near the selection. Click it to translate just the
@@ -26,8 +26,12 @@ const SEL_POPUP_CLASS = "totranslate-sel-popup";
 const FLOAT_CARD_CLASS = "totranslate-float-card";
 const HOVER_CLASS = "totranslate-hover";
 const PICKING_BODY_CLASS = "totranslate-picking";
-const RESULT_CLASS = "totranslate-result";
+const INLINE_RESULT_CLASS = "totranslate-inline-result";
 const DONE_ATTR = "data-totranslate";
+
+// Sentence terminators: Latin + CJK. Newlines are also treated as hard
+// sentence boundaries so line-broken text doesn't merge into one sentence.
+const SENTENCE_TERMINATORS = ".!?。？！";
 
 const MIN_TEXT_LENGTH = 2;
 
@@ -74,7 +78,7 @@ function isOurUi(el) {
   return !!(
     el.closest(`#${BUTTON_ID}`) ||
     el.closest(`#${CLEAR_ID}`) ||
-    el.closest(`.${RESULT_CLASS}`) ||
+    el.closest(`.${INLINE_RESULT_CLASS}`) ||
     el.closest(`.${SEL_POPUP_CLASS}`) ||
     el.closest(`.${FLOAT_CARD_CLASS}`) ||
     el.closest(".totranslate-toast")
@@ -161,7 +165,9 @@ function updateFab() {
 
   const clear = document.getElementById(CLEAR_ID);
   if (clear) {
-    const hasAny = !!document.querySelector(`.${RESULT_CLASS}`);
+    const hasAny = !!document.querySelector(
+      `.${INLINE_RESULT_CLASS}, .${FLOAT_CARD_CLASS}`,
+    );
     clear.classList.toggle("tt-visible", hasAny);
   }
 }
@@ -212,6 +218,7 @@ function onPickMouseMove(e) {
   const block = findBlockContainer(target);
   if (!block) return clearHover();
   if (block === hoveredBlock) return;
+  if (block.hasAttribute(DONE_ATTR)) return clearHover();
   if (!hasMeaningfulText(block)) return clearHover();
 
   clearHover();
@@ -268,62 +275,167 @@ function translateText(text) {
 }
 
 /**
- * Translate a block and insert the result below it. Shows a pending
- * placeholder immediately so the user sees something happen.
+ * Scan a block's text nodes and locate every sentence boundary.
+ *
+ * We first concatenate all eligible text nodes into a single string,
+ * remembering each node's starting offset in that string. Sentence
+ * boundaries are then detected via regex on the full string, and each
+ * boundary's end position is mapped back to a (textNode, offset) pair.
+ *
+ * Text nodes inside our own UI or inside skip tags are ignored, so
+ * they contribute nothing to the concatenated string and nothing is
+ * accidentally inserted into them.
+ *
+ * @param {HTMLElement} block
+ * @returns {Array<{text: string, endNode: Text, endOffset: number}>}
+ */
+function collectSentenceBoundaries(block) {
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  /** @type {Text[]} */
+  const nodes = [];
+  /** @type {number[]} */
+  const starts = [];
+  let fullText = "";
+
+  let node;
+  while ((node = walker.nextNode())) {
+    const parent = node.parentElement;
+    if (!parent) continue;
+    if (isOurUi(parent)) continue;
+    if (SKIP_TAGS.has(parent.tagName?.toLowerCase())) continue;
+    starts.push(fullText.length);
+    nodes.push(/** @type {Text} */ (node));
+    fullText += node.textContent;
+  }
+
+  if (!fullText.trim()) return [];
+
+  // Matches: run up-to-and-including terminators, OR a trailing fragment
+  // (the last sentence of a block often has no terminator).
+  const termClass = `[${SENTENCE_TERMINATORS.replace(/[.]/g, "\\.")}]`;
+  const re = new RegExp(
+    `[^${SENTENCE_TERMINATORS}]+${termClass}+|[^${SENTENCE_TERMINATORS}]+$`,
+    "gu",
+  );
+
+  /** @type {Array<{text: string, endNode: Text, endOffset: number}>} */
+  const sentences = [];
+  let m;
+  while ((m = re.exec(fullText)) !== null) {
+    const raw = m[0];
+    const trimmed = raw.trim();
+    if (trimmed.length < MIN_TEXT_LENGTH) continue;
+
+    const endInFull = m.index + raw.length;
+
+    // Locate the text node that owns endInFull.
+    let idx = -1;
+    for (let i = 0; i < nodes.length; i++) {
+      const start = starts[i];
+      const end = start + nodes[i].textContent.length;
+      if (endInFull > start && endInFull <= end) { idx = i; break; }
+      if (endInFull === start && i === 0) { idx = 0; break; }
+    }
+    if (idx === -1) continue;
+
+    sentences.push({
+      text: trimmed,
+      endNode: nodes[idx],
+      endOffset: endInFull - starts[idx],
+    });
+  }
+  return sentences;
+}
+
+/**
+ * Insert a pending `<span class="totranslate-inline-result">` right after
+ * each sentence's end position in the DOM. Processed in reverse order so
+ * inserting or splitting doesn't invalidate earlier offsets.
+ *
+ * @param {Array<{text: string, endNode: Text, endOffset: number}>} sentences
+ * @returns {Array<{text: string, resultSpan: HTMLSpanElement}>}
+ */
+function insertPendingResultSpans(sentences) {
+  /** @type {Array<{text: string, resultSpan: HTMLSpanElement}>} */
+  const pairs = new Array(sentences.length);
+
+  for (let i = sentences.length - 1; i >= 0; i--) {
+    const { text, endNode, endOffset } = sentences[i];
+
+    const resultSpan = document.createElement("span");
+    resultSpan.className = `${INLINE_RESULT_CLASS} tt-pending`;
+    resultSpan.textContent = "…";
+
+    const parent = endNode.parentNode;
+    if (!parent) continue;
+
+    if (endOffset >= endNode.textContent.length) {
+      // Insert right after the whole text node
+      if (endNode.nextSibling) {
+        parent.insertBefore(resultSpan, endNode.nextSibling);
+      } else {
+        parent.appendChild(resultSpan);
+      }
+    } else if (endOffset <= 0) {
+      parent.insertBefore(resultSpan, endNode);
+    } else {
+      const rest = endNode.splitText(endOffset);
+      parent.insertBefore(resultSpan, rest);
+    }
+
+    pairs[i] = { text, resultSpan };
+  }
+  return pairs;
+}
+
+/**
+ * Translate a block sentence-by-sentence, inserting each translation
+ * right after its source sentence.
  *
  * @param {HTMLElement} el
  */
 async function translateBlock(el) {
-  if (el.hasAttribute(DONE_ATTR)) return; // already translated / in progress
+  if (el.hasAttribute(DONE_ATTR)) return;
 
-  const text = el.innerText?.trim();
-  if (!text) return;
+  const sentences = collectSentenceBoundaries(el);
+  if (sentences.length === 0) return;
 
   el.setAttribute(DONE_ATTR, "pending");
-  const placeholder = insertResult(el, "…", true);
+  const pairs = insertPendingResultSpans(sentences);
   updateFab();
 
-  try {
-    const translated = await translateText(text);
-    placeholder.textContent = translated || "(empty)";
-    placeholder.classList.remove("tt-pending");
-    el.setAttribute(DONE_ATTR, "true");
-  } catch (err) {
-    console.error("[ToTranslate] Translation error:", err);
-    placeholder.textContent = `⚠ ${err.message}`;
-    placeholder.classList.remove("tt-pending");
-    placeholder.classList.add("tt-error");
-    el.removeAttribute(DONE_ATTR);
-  }
+  // Fire all translation requests in parallel; each sentence updates
+  // its own span independently so the user sees progressive results.
+  await Promise.all(pairs.map(async (pair) => {
+    if (!pair) return;
+    const { text, resultSpan } = pair;
+    try {
+      const translated = await translateText(text);
+      resultSpan.textContent = translated || "";
+      resultSpan.classList.remove("tt-pending");
+    } catch (err) {
+      console.error("[ToTranslate] Translation error:", err);
+      resultSpan.textContent = `⚠ ${err.message}`;
+      resultSpan.classList.remove("tt-pending");
+      resultSpan.classList.add("tt-error");
+    }
+  }));
+
+  el.setAttribute(DONE_ATTR, "true");
   updateFab();
 }
 
 /**
- * Insert a result block below (or inside, for table cells) an element.
- *
- * @param {HTMLElement} el
- * @param {string} text
- * @param {boolean} pending
- * @returns {HTMLElement} the inserted block
+ * Remove every inline result span + floating card, and merge any
+ * split text nodes back together via `normalize()`.
  */
-function insertResult(el, text, pending) {
-  const block = document.createElement("div");
-  block.className = RESULT_CLASS + (pending ? " tt-pending" : "");
-  block.textContent = text;
-
-  const tag = el.tagName.toLowerCase();
-  if (tag === "td" || tag === "th") {
-    el.appendChild(block);
-  } else {
-    el.insertAdjacentElement("afterend", block);
-  }
-  return block;
-}
-
 function clearTranslations() {
-  document.querySelectorAll(`.${RESULT_CLASS}`).forEach((el) => el.remove());
-  document.querySelectorAll(`[${DONE_ATTR}]`).forEach((el) => el.removeAttribute(DONE_ATTR));
+  document.querySelectorAll(`.${INLINE_RESULT_CLASS}`).forEach((el) => el.remove());
   document.querySelectorAll(`.${FLOAT_CARD_CLASS}`).forEach((el) => el.remove());
+  document.querySelectorAll(`[${DONE_ATTR}]`).forEach((el) => {
+    el.removeAttribute(DONE_ATTR);
+    el.normalize();
+  });
 }
 
 // ---------------------------------------------------------------------------
