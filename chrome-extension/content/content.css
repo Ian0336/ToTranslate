@@ -9,39 +9,61 @@
 #totranslate-fab {
   position: fixed;
   right: 0;
-  top: 50%;
+  top: 38%;
   transform: translateY(-50%);
   z-index: 2147483647;
 
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px 10px 12px;
+  gap: 0;
+  padding: 6px 8px;
 
   background: #1a1a2e;
   color: #ffffff;
-  border-radius: 24px 0 0 24px;
-  box-shadow: -2px 2px 12px rgba(0, 0, 0, 0.25);
+  border-radius: 18px 0 0 18px;
+  box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.2);
+  opacity: 0.6;
 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
 
   cursor: pointer;
   user-select: none;
-  transition: background 0.2s, padding-right 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, gap 0.2s, padding 0.2s, opacity 0.2s, box-shadow 0.2s;
 }
 
 #totranslate-fab:hover {
   background: #16213e;
-  padding-right: 18px;
-  box-shadow: -4px 2px 18px rgba(0, 0, 0, 0.35);
+  gap: 5px;
+  padding: 6px 12px 6px 10px;
+  opacity: 1;
+  box-shadow: -4px 2px 16px rgba(0, 0, 0, 0.3);
 }
 
 #totranslate-fab svg {
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+#totranslate-fab .totranslate-fab-label {
+  max-width: 0;
+  overflow: hidden;
+  transition: max-width 0.2s;
+}
+
+#totranslate-fab:hover .totranslate-fab-label,
+#totranslate-fab.tt-picking .totranslate-fab-label {
+  max-width: 80px;
+}
+
+#totranslate-fab.tt-picking {
+  opacity: 1;
+  gap: 5px;
+  padding: 6px 12px 6px 10px;
 }
 
 /* --- Picking state (user is selecting a block) --- */
@@ -61,18 +83,19 @@
 #totranslate-clear {
   position: fixed;
   right: 0;
-  top: calc(50% + 34px);
+  top: calc(38% + 24px);
   transform: translateY(8px);
   z-index: 2147483647;
 
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: #4a4a5e;
   color: #ffffff;
-  border-radius: 16px 0 0 16px;
-  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 12px 0 0 12px;
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.18);
+  opacity: 0.6;
 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1;
 
@@ -92,6 +115,7 @@
 
 #totranslate-clear:hover {
   background: #5a5a70;
+  opacity: 1;
 }
 
 /* ---------------------------------------------------------------------------
@@ -116,16 +140,16 @@ body.totranslate-picking * {
 
 .totranslate-inline-result {
   display: block;
-  margin: 2px 0 6px 0;
-  padding: 2px 8px;
+  margin: 1px 0 3px 0;
+  padding: 1px 6px;
 
   color: inherit;
-  background: rgba(74, 144, 217, 0.08);
+  background: rgba(74, 144, 217, 0.06);
   border-left: 2px solid #4a90d9;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 3px 3px 0;
 
-  font-size: 0.92em;
-  line-height: 1.5;
+  font-size: 0.82em;
+  line-height: 1.35;
   font-style: normal;
   font-weight: normal;
   text-decoration: none;
