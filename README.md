@@ -49,7 +49,14 @@ OLLAMA_ORIGINS="chrome-extension://*" ollama serve
 launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"
 ```
 
-**Option C — Linux systemd:**
+**Option C — macOS Homebrew (`brew services`):**
+
+```bash
+launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"
+brew services restart ollama
+```
+
+**Option D — Linux systemd:**
 
 ```bash
 sudo systemctl edit ollama
