@@ -12,9 +12,18 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "ToTranslate",
-        "width": 800,
-        "height": 600
+        "width": 480,
+        "height": 360,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "visible": false,
+        "center": true,
+        "transparent": true,
+        "shadow": true
       }
     ],
     "security": {

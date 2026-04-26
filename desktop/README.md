@@ -1,85 +1,83 @@
-# ToTranslate
+# ToTranslate (Desktop)
 
-A Tauri desktop application that provides intelligent text completion using local LLM (Ollama).
+A summon-anywhere local translator. Press **⌘⇧T** from any app, get a floating panel that translates your clipboard via local Ollama.
 
-## ✨ Features
+## Features
 
-- **Smart Completion**: Automatically calls local LLM to generate completion suggestions as you type
-- **Debounce**: Waits 500ms after you stop typing before triggering AI request
-- **Tab Accept**: Press Tab to append the first suggested word to your input
-- **Latest Request Priority**: Only returns the most recent request result; older requests are ignored
+- **Global hotkey** `Cmd+Shift+T` toggles a floating, always-on-top panel
+- **Auto clipboard pickup** — opens with your latest copied text pre-filled
+- **60+ languages** with one-click swap
+- **Local & private** — runs entirely against your Ollama server
+- **No dock icon** (macOS) — feels like a system utility
 
-## 🔧 Prerequisites
+## Prerequisites
 
-1. **Ollama** - Local LLM service
+1. **Ollama** running locally:
    ```bash
-   # macOS
-   brew install ollama
-   
-   # Or download from https://ollama.ai
-   ```
-
-2. **Download a model**
-   ```bash
-   ollama pull qwen2.5:3b
-   ```
-
-3. **Make sure Ollama is running**
-   ```bash
+   brew install ollama   # or download from https://ollama.ai
    ollama serve
    ```
+2. **Pull a translation model** (default: `translategemma:4b`):
+   ```bash
+   ollama pull translategemma:4b
+   ```
 
-## 🚀 Development
+## Development
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Development mode
-npm run tauri dev
-
-# Build for production
-npm run tauri build
+pnpm tauri dev
 ```
 
-## 📖 Usage
+The window is hidden on launch. Press `Cmd+Shift+T` to summon it.
 
-1. Launch the application
-2. Type text in the input field
-3. After 500ms of inactivity, AI suggestions will appear below
-4. Press **Tab** to append the first suggested word to your input
-5. Keep typing or press Tab again to accept more suggestions
+## Build
 
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React + TypeScript + Vite |
-| Backend | Rust + Tauri |
-| AI | Ollama (qwen2.5:3b) |
-
-## 📁 Project Structure
-
-```
-ToTranslate/
-├── src/                  # React frontend
-│   └── App.tsx          # Main application logic
-├── src-tauri/           # Rust backend
-│   └── src/lib.rs       # Tauri commands
-└── scripts/             # Python test scripts
-    └── main.py          # Ollama API testing
+```bash
+pnpm tauri build
 ```
 
-## ⚙️ Configuration
+## Usage
 
-Edit `src-tauri/src/lib.rs` to adjust LLM parameters:
+1. Copy any text in any app.
+2. Press **⌘⇧T** — panel appears, your clipboard is pre-filled and translated.
+3. Edit/replace the text to retranslate (debounced).
+4. **⌘⏎** copies the translation back to your clipboard.
+5. **Esc** hides the panel (process stays alive for instant re-summon).
 
-```rust
-"model": "qwen2.5:3b",      // Model name
-"num_predict": 8,            // Number of tokens to generate
-"temperature": 0.1,          // Creativity (0-1)
+## Settings
+
+Click the ⚙ icon in the panel to change:
+- **Ollama URL** (default `http://localhost:11434`)
+- **Model** (default `translategemma:4b`)
+
+Source/target language dropdowns persist across sessions.
+
+## Tech
+
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19 + TypeScript + Vite |
+| Backend | Rust + Tauri 2 |
+| AI | Ollama (chat API, non-streaming) |
+| Plugins | global-shortcut, clipboard-manager, single-instance |
+
+## Project Structure
+
+```
+desktop/
+├── src/
+│   ├── App.tsx          # Translation panel UI
+│   ├── App.css
+│   └── languages.ts     # 60+ language code→name map
+├── src-tauri/
+│   ├── src/lib.rs       # translate command + hotkey wiring
+│   ├── tauri.conf.json  # Window config (frameless, on-top, hidden on launch)
+│   └── capabilities/
+└── README.md
 ```
 
-## 📝 License
+## Notes
 
-MIT
+- The translation prompt mirrors the chrome-extension's, so output quality is consistent across products.
+- `Cmd+Shift+T` will override Chrome's "reopen closed tab" while this app is running. If you'd rather change it, edit the shortcut in `src-tauri/src/lib.rs` (search for `Modifiers::SUPER | Modifiers::SHIFT`).
