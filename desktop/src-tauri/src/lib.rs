@@ -1,3 +1,4 @@
+use std::io::{BufRead, BufReader};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use tauri::{Emitter, Manager, WebviewWindow};
@@ -44,31 +45,55 @@ fn translate(
         let resp = ureq::post(&url).send_json(ureq::json!({
             "model": model,
             "messages": [{ "role": "user", "content": prompt }],
-            "stream": false,
+            "stream": true,
         }));
 
         if request_id != LATEST_REQUEST_ID.load(Ordering::SeqCst) {
             return;
         }
 
-        match resp {
-            Ok(response) => match response.into_json::<serde_json::Value>() {
-                Ok(body) => {
-                    let translated = body["message"]["content"]
-                        .as_str()
-                        .unwrap_or("")
-                        .trim()
-                        .to_string();
-                    let _ = window.emit("translation-result", translated);
-                }
-                Err(e) => {
-                    let _ = window.emit("translation-error", e.to_string());
-                }
-            },
+        let response = match resp {
+            Ok(r) => r,
             Err(e) => {
                 let _ = window.emit("translation-error", e.to_string());
+                return;
+            }
+        };
+
+        let reader = BufReader::new(response.into_reader());
+        let mut accumulated = String::new();
+
+        for line in reader.lines() {
+            if request_id != LATEST_REQUEST_ID.load(Ordering::SeqCst) {
+                return;
+            }
+            let line = match line {
+                Ok(l) => l,
+                Err(e) => {
+                    let _ = window.emit("translation-error", e.to_string());
+                    return;
+                }
+            };
+            if line.is_empty() {
+                continue;
+            }
+            let parsed: serde_json::Value = match serde_json::from_str(&line) {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            if let Some(chunk) = parsed["message"]["content"].as_str() {
+                if !chunk.is_empty() {
+                    accumulated.push_str(chunk);
+                    let _ = window.emit("translation-chunk", accumulated.clone());
+                }
+            }
+            if parsed["done"].as_bool().unwrap_or(false) {
+                let _ = window.emit("translation-done", accumulated.trim().to_string());
+                return;
             }
         }
+
+        let _ = window.emit("translation-done", accumulated.trim().to_string());
     });
 }
 

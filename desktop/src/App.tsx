@@ -39,7 +39,9 @@ function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "streaming" | "error"
+  >("idle");
   const [showSettings, setShowSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,8 +72,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const unResult = listen<string>("translation-result", (e) => {
+    const unChunk = listen<string>("translation-chunk", (e) => {
       setOutput(e.payload);
+      setStatus("streaming");
+    });
+    const unDone = listen<string>("translation-done", (e) => {
+      if (e.payload) setOutput(e.payload);
       setStatus("idle");
     });
     const unError = listen<string>("translation-error", (e) => {
@@ -79,7 +85,8 @@ function App() {
       setStatus("error");
     });
     return () => {
-      unResult.then((un) => un());
+      unChunk.then((un) => un());
+      unDone.then((un) => un());
       unError.then((un) => un());
     };
   }, []);
